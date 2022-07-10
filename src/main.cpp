@@ -6,6 +6,7 @@
     (c) 2014 by Korneliusz Jarzebski
 */
 
+//FIXME: rename to test_imu/test_main.cpp eventually... for now this is fine
 #include <Adafruit_MPU6050.h>
 #include <Adafruit_Sensor.h>
 #include <Wire.h>
