@@ -1,26 +1,17 @@
 /*
-  SD card file dump
- 
- This example shows how to read a file from the SD card using the
- SD library and send it over the serial port.
- 	
- The circuit:
- * SD card attached to SPI bus as follows:
- ** UNO:  MOSI - pin 11, MISO - pin 12, CLK - pin 13, CS - pin 4 (CS pin can be changed)
-  and pin #10 (SS) must be an output
- ** Mega:  MOSI - pin 51, MISO - pin 50, CLK - pin 52, CS - pin 4 (CS pin can be changed)
-  and pin #52 (SS) must be an output
- ** Leonardo: Connect to hardware SPI via the ICSP header
- 
- created  22 December 2010  by Limor Fried
- modified 9 Apr 2012  by Tom Igoe
- 
- This example code is in the public domain.
- 	 
- */
+  
+  IMU Unit
+  Description here
 
+*/
+
+//sd card dependencies
 #include <SPI.h>
 #include <SD.h>
+//mpu6050 dependencies
+#include <Adafruit_MPU6050.h>
+#include <Adafruit_Sensor.h>
+#include <Wire.h>
 
 // change this to match your SD shield or module;
 //     Arduino Ethernet shield: pin 4
@@ -28,12 +19,14 @@
 //     Sparkfun SD shield: pin 8
 const int chipSelect = 10;
 
+Adafruit_MPU6050 mpu;
+
 void setup()
 {
  // Open serial communications and wait for port to open:
   Serial.begin(115200);
    while (!Serial) {
-    ; // wait for serial port to connect. Needed for Leonardo only
+    delay(10); // wait for serial port to connect. Needed for Leonardo only
   }
 
 
@@ -41,42 +34,86 @@ void setup()
   // make sure that the default chip select pin is set to
   // output, even if you don't use it:
   pinMode(SS, OUTPUT);
-  
-  // see if the card is present and can be initialized:
+  // see if SD card is present and can be initialized:
   if (!SD.begin(chipSelect)) {
     Serial.println("Card failed, or not present");
     // don't do anything more:
     return;
   }
   Serial.println("card initialized.");
-  
-  // open the file. note that only one file can be open at a time,
-  // so you have to close this one before opening another.
-  File dataFile = SD.open("datalog.txt",FILE_WRITE);
 
-  // if the file is available, write to it:
-  if (dataFile) {
-    while (dataFile.available()) {
-      Serial.write(dataFile.read());
+  
+  
+  Serial.println("Adafruit MPU6050 test!");
+  // Try to initialize MPU6050 chip
+  if (!mpu.begin()) {
+    Serial.println("Failed to find MPU6050 chip");
+    while (1) {
+      delay(10);
     }
-    Serial.println("writing to file...");
-    dataFile.println("Hello, File");
-    dataFile.close();
-  }  
-  // if the file isn't open, pop up an error:
-  else {
-    Serial.println("error opening datalog.txt");
-  } 
+  }
+  Serial.println("MPU6050 Found!");
+  
+  //setup motion detection
+  mpu.setHighPassFilter(MPU6050_HIGHPASS_0_63_HZ);
+  mpu.setMotionDetectionThreshold(1);
+  mpu.setMotionDetectionDuration(20);
+  mpu.setInterruptPinLatch(true);	// Keep it latched.  Will turn off when reinitialized.
+  mpu.setInterruptPinPolarity(true);
+  mpu.setMotionInterrupt(true);
+
+  Serial.println("");
+  delay(100);
+  
 }
 
-int ii = 0;
-int ctMax = 1;
 void loop()
 {
-  while(ii < ctMax)
-  {
-    Serial.println("");
-    Serial.println("Hello, Terminal!");
-    ii++;
+  if(mpu.getMotionInterruptStatus()){
+    //get new sensor events with the readings
+    sensors_event_t a,g,temp;
+    mpu.getEvent(&a,&g,&temp);
+
+    // open the file. note that only one file can be open at a time,
+    // so you have to close this one before opening another.
+    File dataFile = SD.open("datalog.txt",FILE_WRITE);
+
+
+    // if the file is available, write to it:
+    if (dataFile) {
+      while (dataFile.available()) {
+        Serial.write(dataFile.read());
+      }
+      Serial.println("writing to file...");
+      dataFile.println("Hello, File");
+      
+      // Print out the values
+      dataFile.print("AccelX:");
+      dataFile.print(a.acceleration.x);
+      dataFile.print(",");
+      dataFile.print("AccelY:");
+      dataFile.print(a.acceleration.y);
+      dataFile.print(",");
+      dataFile.print("AccelZ:");
+      dataFile.print(a.acceleration.z);
+      dataFile.print(", ");
+      dataFile.print("GyroX:");
+      dataFile.print(g.gyro.x);
+      dataFile.print(",");
+      dataFile.print("GyroY:");
+      dataFile.print(g.gyro.y);
+      dataFile.print(",");
+      dataFile.print("GyroZ:");
+      dataFile.print(g.gyro.z);
+      dataFile.println("");
+
+      dataFile.close();
+    }  
+    // if the file isn't open, pop up an error:
+    else {
+      Serial.println("error opening datalog.txt");
+    } 
   }
+
+  delay(10);
 }
