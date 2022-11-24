@@ -46,7 +46,7 @@ void setup()
   
   Serial.println("Adafruit MPU6050 test!");
   // Try to initialize MPU6050 chip
-  if (!mpu.begin()) {
+  if (!mpu.begin(0x69)) {
     Serial.println("Failed to find MPU6050 chip");
     while (1) {
       delay(10);
@@ -85,7 +85,6 @@ void loop()
         Serial.write(dataFile.read());
       }
       Serial.println("writing to file...");
-      dataFile.println("Hello, File");
       
       // Print out the values
       dataFile.print("AccelX:");
