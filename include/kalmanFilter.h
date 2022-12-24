@@ -9,7 +9,7 @@ class KalmanFilter
 public:
     void Initialize(float kalmanP, float kalmanQ, float kalmanR);
     void Predict(sensors_event_t gyro, float dt);
-    void Update(sensors_event_t accel);
+    void Update(sensors_event_t accel, float dt);
 
 private:
     Matrix<4>   x;

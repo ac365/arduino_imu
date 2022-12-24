@@ -7,7 +7,7 @@ HelperFunctions hlp;
 
 void KalmanFilter::Initialize(float kalmanP, float kalmanQ, float kalmanR)
 {
-    //state matrix
+    //state vector
     x = hlp.euler2Quaternion(Matrix<3> {0.0, 0.0, 0.0});
 
     //error covariance matrix
@@ -31,7 +31,7 @@ void KalmanFilter::Initialize(float kalmanP, float kalmanQ, float kalmanR)
 
 void KalmanFilter::Predict(sensors_event_t g, float dt)
 {
-    //re-package angular velocity
+    //re-package angular velocity measurements
     Matrix<3> w = {g.gyro.x, g.gyro.y, g.gyro.z};
     float p=w(0);
     float q=w(1);
@@ -40,9 +40,9 @@ void KalmanFilter::Predict(sensors_event_t g, float dt)
     //predict state
     Matrix<4,4> stm; //state transition matrix
     stm(0,0)=0.0; stm(0,1)=-p;  stm(0,2)=-q;  stm(0,3)=-r;
-    stm(1,0)=p;   stm(1,1)=0.0; stm(1,2)= r;  stm(1,3)=-q;
-    stm(2,0)=q;   stm(2,1)=-r;  stm(2,2)=0.0; stm(2,3)= p;
-    stm(3,0)=r;   stm(3,1)= q;  stm(3,2)=-p;  stm(3,3)=0.0;
+    stm(1,0)= p;  stm(1,1)=0.0; stm(1,2)= r;  stm(1,3)=-q;
+    stm(2,0)= q;  stm(2,1)=-r;  stm(2,2)=0.0; stm(2,3)= p;
+    stm(3,0)= r;  stm(3,1)= q;  stm(3,2)=-p;  stm(3,3)=0.0;
     stm *= 0.5;
 
     x += stm*x;
@@ -52,4 +52,46 @@ void KalmanFilter::Predict(sensors_event_t g, float dt)
     A = stm;
 
     P += (A*P + P*(~A) + Q)*dt;
+}
+
+void KalmanFilter::Update(sensors_event_t a, float dt)
+{
+    //re-package acceleration measurements and state
+    Matrix<3> y = {a.acceleration.x, a.acceleration.y, a.acceleration.z};
+    float q0 = x(0);
+    float q1 = x(1);
+    float q2 = x(2);    
+    float q3 = x(3);    
+
+    //accelerometer model
+    Matrix<3> h;
+    h(0) = 2*(q1*q3 - q0*q2);
+    h(1) = 2*(q2*q3 + q0*q1);
+    h(2) = q0*q0 - q1*q1 - q2*q2 + q3*q3;
+    h   *= -hlp.g;
+
+    //accelerometer model Jacobian
+    Matrix<3,4> C;
+    C(0,0)=-q2; C(0,1)= q3; C(0,2)=-q0; C(0,3)=q1;
+    C(1,0)= q1; C(1,1)= q0; C(0,2)= q3; C(1,3)=q2;
+    C(2,0)= q0; C(2,1)=-q1; C(0,2)=-q2; C(2,3)=q3;
+
+    //compute Kalman gain
+    Matrix<4,3> K;
+    Matrix<3,3> tmp;
+    tmp = C*P*(~C)+R;
+    Invert(tmp);
+    K = P*(~C)*tmp;
+
+    //correct state estimate predictions
+    x += K*(y - h);
+
+    //update error covariance matrix
+    Matrix<4,4> I;
+    I(0,0)=1.0; I(0,1)=0.0; I(0,2)=0.0; I(0,3)=0.0;
+    I(1,0)=0.0; I(1,1)=1.0; I(1,2)=0.0; I(1,3)=0.0;
+    I(2,0)=0.0; I(2,1)=0.0; I(2,2)=1.0; I(2,3)=0.0;
+    I(3,0)=0.0; I(3,1)=0.0; I(3,2)=0.0; I(3,3)=1.0;
+    
+    P = (I - K*C)*P;
 }
