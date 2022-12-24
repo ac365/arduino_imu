@@ -29,7 +29,7 @@ void KalmanFilter::Initialize(float kalmanP, float kalmanQ, float kalmanR)
     R(3,0)=0.0;     R(3,1)=0.0;     R(3,2)=0.0;     R(3,3)=kalmanR;
 }
 
-void KalmanFilter::Predict(sensors_event_t g, float dt)
+void KalmanFilter::_Predict(sensors_event_t g, float dt)
 {
     //re-package angular velocity measurements
     Matrix<3> w = {g.gyro.x, g.gyro.y, g.gyro.z};
@@ -54,7 +54,7 @@ void KalmanFilter::Predict(sensors_event_t g, float dt)
     P += (A*P + P*(~A) + Q)*dt;
 }
 
-void KalmanFilter::Update(sensors_event_t a, float dt)
+void KalmanFilter::_Update(sensors_event_t a)
 {
     //re-package acceleration measurements and state
     Matrix<3> y = {a.acceleration.x, a.acceleration.y, a.acceleration.z};
@@ -94,4 +94,12 @@ void KalmanFilter::Update(sensors_event_t a, float dt)
     I(3,0)=0.0; I(3,1)=0.0; I(3,2)=0.0; I(3,3)=1.0;
     
     P = (I - K*C)*P;
-}
+};
+
+Matrix<4> KalmanFilter::Step(sensors_event_t gyro, sensors_event_t accel, float dt)
+{
+    KalmanFilter::_Predict(gyro,dt);
+    KalmanFilter::_Update(accel);
+
+    return x;
+};
