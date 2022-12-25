@@ -79,7 +79,7 @@ void KalmanFilter::_Update(sensors_event_t a)
     //compute Kalman gain
     Matrix<4,3> K;
     Matrix<3,3> tmp;
-    tmp = C*P*(~C)+R;
+    tmp = C*P*(~C) + R;
     Invert(tmp);
     K = P*(~C)*tmp;
 
