@@ -45,7 +45,7 @@ void KalmanFilter::_Predict(sensors_event_t g, float dt)
     stm(3,0)= r;   stm(3,1)= q;   stm(3,2)=-p;   stm(3,3)=0.0f;
     stm *= 0.5f;
 
-    x += stm*x;
+    x += stm*x*dt;
 
     //update error covariance
     Matrix<4,4> A; //Jacobian of state equation
@@ -65,16 +65,16 @@ void KalmanFilter::_Update(sensors_event_t a)
 
     //compute Kalman gain
     Matrix<3> h; //accelerometer model
-    h(0) = 2*(q1*q3 - q0*q2);
-    h(1) = 2*(q2*q3 + q0*q1);
-    h(2) = q0*q0 - q1*q1 - q2*q2 + q3*q3;
-    h   *= -hlp.g;
+    h(0)=2*(q1*q3 - q0*q2);
+    h(1)=2*(q2*q3 + q0*q1);
+    h(2)=q0*q0 - q1*q1 - q2*q2 + q3*q3;
+    h  *= hlp.g;
 
     Matrix<3,4> C; //Jacobian of accelerometer model
-    C(0,0) =-q2; C(0,1)= q3; C(0,2)=-q0; C(0,3)=q1;
-    C(1,0) = q1; C(1,1)= q0; C(1,2)= q3; C(1,3)=q2;
-    C(2,0) = q0; C(2,1)=-q1; C(2,2)=-q2; C(2,3)=q3;
-    C     *= 2.0f;
+    C(0,0)=-q2; C(0,1)= q3; C(0,2)=-q0; C(0,3)=q1;
+    C(1,0)= q1; C(1,1)= q0; C(1,2)= q3; C(1,3)=q2;
+    C(2,0)= q0; C(2,1)=-q1; C(2,2)=-q2; C(2,3)=q3;
+    C    *= 2.0f;
 
     Matrix<4,3> K; //Kalman gain
     Matrix<3,3> tmp;

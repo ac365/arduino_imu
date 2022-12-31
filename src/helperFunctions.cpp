@@ -3,9 +3,9 @@
 Matrix<4> HelperFunctions::euler2Quaternion(Matrix<3> eul)
 {
     //re-package euler angles
-    float phi  =eul(0,0);
-    float theta=eul(1,0);
-    float psi  =eul(2,0);
+    float phi  =eul(0);
+    float theta=eul(1);
+    float psi  =eul(2);
 
     //convert to quaternions
     float cp=cos(0.5*phi);   float sp=sin(0.5*phi);
