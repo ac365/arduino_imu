@@ -7,8 +7,8 @@ using namespace BLA;
 class KalmanFilter
 {    
 public:
-    void      Initialize(float kalmanP, float kalmanQ, float kalmanR);
-    Matrix<4> Step(sensors_event_t gyro, sensors_event_t accel, float dt);
+    const void      Initialize(float kalmanP, float kalmanQ, float kalmanR);
+    const Matrix<4> Step(sensors_event_t gyro, sensors_event_t accel, float dt);
 
 private:
     Matrix<4>   x;
@@ -16,6 +16,6 @@ private:
     Matrix<4,4> Q;
     Matrix<3,3> R;
 
-    void _Predict(sensors_event_t gyro, float dt);
-    void _Update(sensors_event_t accel);
+    const void _Predict(sensors_event_t gyro, float dt);
+    const void _Update(sensors_event_t accel);
 };
